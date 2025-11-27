@@ -1,65 +1,97 @@
 import streamlit as st
 import numpy as np
-import pickle
+from joblib import load
 
+# ------------------------
 # Load the saved model
-with open("model.pkl", "rb") as f:
-    model = pickle.load(f)
-
-# Define locations and mapping
-locations = ["Ikeja", "Lekki Phase I", "Banana Island", "Victoria Island"]
-location_mapping = {loc: i for i, loc in enumerate(locations)}
+# ------------------------
+model = load("housing_model.joblib")
 
 # ------------------------
 # Page configuration
 # ------------------------
 st.set_page_config(
-    page_title="🏠 Emerald Homes",
+    page_title="🏡 Emerald Homes Price Predictor",
+    page_icon="🏡",
     layout="centered",
     initial_sidebar_state="expanded",
 )
 
+st.sidebar.header("🧑‍🤝‍🧑 Team Members")
+st.sidebar.markdown("**Team Members**")
+members_data = [
+    "1. Akinkuotu Oluwatobiloba Daniel",
+    "2. Adeyinka Oluwaseyi Emmanuel",
+    "3. Aneke Ester Chiamaka",
+    "4. Ezeh Vanessa Adaugo",
+    "5. Oyelade Temilola Oyewale",
+    "6. Odeh Samuel Adi",
+    "7. Anamah Nnamdi Prince",
+    "8. Aderinto Ayomide Peter",
+    "9. Amagwu Munachimso Alma",
+    "10. Afolabi Oluwadarasimi Gabriel",
+    "11. Adekunle Adeoba Samuel"
+    ]
+for member in members_data:
+    st.sidebar.write(member.upper())
 # ------------------------
-# Custom CSS for colors
+# Custom CSS Styling
 # ------------------------
 st.markdown(
     """
     <style>
     /* Main background */
     .main {
-        background-color: #FFFFFF;
+        background-color: #F5F7FA;
     }
     
-    /* Header */
+    /* Title styling */
     h1 {
-        color: #1E90FF;  /* blue */
+        color: #1E3A8A;  /* deep blue */
         text-align: center;
-        font-family: 'Arial';
+        font-family: 'Helvetica', sans-serif;
+        font-weight: 700;
+    }
+
+    /* Input boxes styling */
+    div.stNumberInput>div>input {
+        border: 2px solid #1E3A8A;
+        border-radius: 8px;
+        padding: 8px;
+        font-size: 16px;
     }
 
     /* Prediction button */
-    .stButton>button {
-        background-color: #FF69B4;  /* pink */
+    div.stButton>button {
+        background: linear-gradient(90deg, #FF6EC7, #FF3CAC);
         color: white;
-        font-size: 16px;
+        font-size: 18px;
+        font-weight: bold;
         height: 50px;
         width: 100%;
-        border-radius: 10px;
-        font-weight: bold;
+        border-radius: 12px;
+        transition: 0.3s;
     }
 
-    /* Input boxes */
-    div.stNumberInput>div>input {
-        border: 2px solid #1E90FF;
-        border-radius: 5px;
-        padding: 5px;
+    div.stButton>button:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.3);
     }
 
-    /* Select box */
-    div.stSelectbox>div>div>div {
-        border: 2px solid #FF69B4;
-        border-radius: 5px;
-        padding: 5px;
+    /* Price output box */
+    .price-output {
+        font-size: 28px;
+        font-weight: 700;
+        color: #FF3CAC;
+        text-align: center;
+        animation: pop 0.8s ease-out;
+    }
+
+    /* Animation */
+    @keyframes pop {
+        0% { transform: scale(0.5); opacity: 0; }
+        70% { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(1); }
     }
     </style>
     """,
@@ -69,35 +101,40 @@ st.markdown(
 # ------------------------
 # App Title
 # ------------------------
-st.markdown("<h1>🏠 Emerald Homes</h1>", unsafe_allow_html=True)
+st.markdown("<h1>🏡 Emerald Homes Price Predictor</h1>", unsafe_allow_html=True)
+st.write("Enter the details of your property below to predict its market price.")
 st.write("---")
 
 # ------------------------
-# Inputs in columns
+# Input Columns
 # ------------------------
 col1, col2 = st.columns(2)
 
 with col1:
-    area = st.number_input("Area (Square Feet)", min_value=0)
-    bhk = st.number_input("Number of Bedrooms", min_value=0)
+    area = st.number_input("🏠 Area (sq. ft.)", min_value=0)
+    bhk = st.number_input("🛏 Bedrooms", min_value=0)
 
 with col2:
-    bath = st.number_input("Number of Bathrooms", min_value=0)
-    balcony = st.number_input("Number of Balconies", min_value=0)
-
-# Location input (full width)
-location = st.selectbox("Select Location", locations)
+    bath = st.number_input("🛁 Bathrooms", min_value=0)
+    stories = st.number_input("🏢 Stories", min_value=0)
+    parking = st.number_input("🚗 Parking Spaces", min_value=0)
 
 # ------------------------
 # Prediction Button
 # ------------------------
-if st.button("🏡 Predict House Price"):
-    # Encode location
-    location_encoded = location_mapping[location]
+if st.button("💰 Predict Price"):
+    # Prepare features
+    features = np.array([[area, bhk, bath, stories, parking]])
+    
+    # Predict price
+    prediction_log = model.predict(features)
+    prediction = np.expm1(prediction_log)
+    
+    # Display prediction with styled container
+    st.markdown(
+        f"<div class='price-output'>Estimated Price: 💵 {prediction[0]:,.2f}</div>",
+        unsafe_allow_html=True
+    )
 
-    # Prepare features array
-    features = np.array([[area, bhk, bath, balcony, location_encoded]])
-
-    # Make prediction
-    prediction = model.predict(features)
-    st.success(f"Predicted House Price: $ {prediction[0]:,.2f}")
+    # Optional celebratory animation
+    st.balloons()
